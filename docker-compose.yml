@@ -15,7 +15,7 @@ services:
       DB_NAME: orders_db
       REDIS_ADDR: redis:6379
       PORT: "8080"
-      
+
   postgres:
     image: postgres:16-alpine
     container_name: orders_postgres

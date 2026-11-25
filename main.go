@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"errors"
 	"os/signal"
@@ -51,10 +52,22 @@ func runServer(srv *http.Server, rdbCloser interface{ Close() error }, poolClose
 
 	log.Println("Server stopped cleanly")
 }
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
 
 func main() {
 	ctx := context.Background()
-	dsn := "postgres://user:password@localhost:5432/orders_db?sslmode=disable"
+	dbUser := getEnv("DB_USER", "user")
+	dbPass := getEnv("DB_PASSWORD", "password")
+	dbHost := getEnv("DB_HOST", "localhost")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbName := getEnv("DB_NAME", "orders_db")
+	redisAddr := getEnv("REDIS_ADDR", "localhost:6379")
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", dbUser, dbPass, dbHost, dbPort, dbName)
 
 	pool, err := pgxpool.New(ctx, dsn)
 
@@ -69,7 +82,7 @@ func main() {
 	fmt.Println("DB was connected")
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: redisAddr,
 	})
 	if err := rdb.Ping(ctx).Err(); err != nil {
 		log.Fatal("Redis connection failed:", err)
